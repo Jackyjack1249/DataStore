@@ -1,0 +1,105 @@
+-- PlayerService
+local PlayerService = game:GetService("Players")
+
+-- Data Store Misc
+local DataStoreService = game:GetService("DataStoreService")
+local DataStore = DataStoreService:GetDataStore("ExampleDataStore")
+
+-- Data Value
+local DataLeaderboard = require(script.ModuleScript)
+
+local function OnJoin(Player)
+	-- Do the module script easy add value stuff, idk man 
+	-- i did it i think pal? idk i added data id and it automatically added it buddy li lbuddy
+	
+	local Leaderstats = Instance.new("Folder")
+	Leaderstats.Name = "leaderstats"
+	Leaderstats.Parent = Player
+	
+	local OurData
+	
+	local Success, Error = pcall(function()
+		OurData = DataStore:GetAsync(Player.UserId)
+	end)
+	
+	if Success then 
+		print(OurData)
+		for i, Values in pairs(DataLeaderboard.Values) do
+			local Value
+			
+			if typeof(Values[2]) == "boolean" then
+				Value = Instance.new("BoolValue")
+			elseif typeof(Values[2]) == "string" then
+				Value = Instance.new("StringValue")
+			else
+				Value = Instance.new("NumberValue")
+			end
+			
+			Value.Name = Values[1]
+			
+			print(OurData)
+			print(Values[1])
+			if OurData == nil then
+				Value.Value = Values[2]
+				-- If I can't find data imma set it back to that og basic chat
+			else
+				if OurData[Values[1]] ~= nil then
+					Value.Value = OurData[Values[1]]
+				else
+					Value.Value = Values[2]
+					-- If I can't find data imma set it back to that og basic chat
+				end
+			end
+			
+			Value.Parent = Leaderstats
+		end
+	else
+		warn(Error)
+	end
+end
+
+local function OnLeave(Player)
+	local DataToSave = {}
+	
+	for _, stat in pairs(Player.leaderstats:GetChildren()) do
+		DataToSave[stat.Name] = stat.Value
+	end
+	
+	--[[local Success, Error = pcall(function()
+		DataStore:SetAsync(Player.UserId, DataToSave)
+	end)
+	
+	print(DataToSave)
+	
+	if Success then
+		print("Saved!")
+	else
+		warn(Error)
+	end--]]
+	
+	-- Setup update async, keep the other stuff commented as yea you know, just handy?
+	
+	if DataToSave then
+		DataStore:UpdateAsync(Player.UserId, function(OldValue)
+			local PreviousData = OldValue or {DataId = 0}
+			
+			print(OldValue)
+			print(DataToSave.DataId)
+			print(PreviousData.DataId)
+			
+			if DataToSave.DataId == PreviousData.DataId then
+				DataToSave.DataId = DataToSave.DataId + 1
+				print("Saved my homie")
+				return DataToSave
+			else
+				warn("Data Id Isn't Equal")
+				return nil
+			end
+		end)
+	else
+		warn("No Data To Save")
+	end
+end
+
+PlayerService.PlayerAdded:Connect(OnJoin)
+PlayerService.PlayerRemoving:Connect(OnLeave)
